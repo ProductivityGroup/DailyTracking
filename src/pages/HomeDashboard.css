@@ -1,0 +1,163 @@
+.home-dashboard {
+  padding: var(--spacing-4);
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dashboard-header {
+  margin-bottom: var(--spacing-5);
+}
+
+.dashboard-header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--md-sys-color-on-background);
+  margin-bottom: var(--spacing-1);
+}
+
+.date-subtitle {
+  color: var(--md-sys-color-outline);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.progress-section {
+  margin-bottom: var(--spacing-6);
+}
+
+.progress-card {
+  background-color: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.progress-text h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.progress-text p {
+  font-size: 0.875rem;
+  opacity: 0.9;
+}
+
+.progress-bar-container {
+  height: 8px;
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background-color: var(--md-sys-color-primary);
+  border-radius: var(--radius-full);
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.habits-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.habit-card {
+  background-color: var(--md-sys-color-surface);
+  border: 1px solid var(--md-sys-color-outline);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-3);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+
+.habit-card:hover {
+  background-color: var(--md-sys-color-surface-variant);
+}
+
+.habit-card.completed {
+  background-color: var(--md-sys-color-primary);
+  border-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+}
+
+.habit-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  background-color: var(--md-sys-color-surface-variant);
+  transition: all 0.2s ease;
+}
+
+.habit-info {
+  flex: 1;
+}
+
+.habit-info h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.check-button {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--md-sys-color-outline);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  /* Let card handle the click */
+}
+
+.habit-card.completed .check-button {
+  border-color: var(--md-sys-color-on-primary);
+  background-color: var(--md-sys-color-on-primary);
+}
+
+.checkmark {
+  color: var(--md-sys-color-primary);
+  font-weight: bold;
+  animation: checkPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes checkPop {
+  0% {
+    transform: scale(0);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.empty-state {
+  text-align: center;
+  padding: var(--spacing-6) 0;
+  color: var(--md-sys-color-outline);
+}

@@ -1,0 +1,103 @@
+.layout-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  margin: 0 auto;
+  max-width: 600px;
+  /* Keep it mobile-width on desktop */
+  background-color: var(--md-sys-color-background);
+  position: relative;
+}
+
+.layout-main {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: calc(var(--spacing-8) + var(--spacing-4));
+}
+
+.app-top-header {
+  padding: var(--spacing-3) var(--spacing-4);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-2);
+}
+
+.header-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--md-sys-color-on-background);
+  padding: var(--spacing-2);
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  transition: background-color 0.2s;
+}
+
+.header-btn:hover {
+  background-color: var(--md-sys-color-surface-variant);
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+.bottom-nav {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background-color: var(--md-sys-color-surface-variant);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: var(--md-sys-color-on-surface-variant);
+  flex: 1;
+  height: 100%;
+  transition: color 0.2s ease;
+}
+
+.nav-item span {
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-top: 4px;
+}
+
+.nav-item:hover {
+  background-color: rgba(var(--md-sys-color-on-surface-variant), 0.08);
+  /* Needs RGB decomposition for true MD3 hover, simplified here */
+}
+
+.nav-item.active {
+  color: var(--md-sys-color-primary);
+}
+
+.nav-item.active svg {
+  background-color: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+  border-radius: var(--radius-full);
+  padding: 4px 16px;
+  box-sizing: content-box;
+}

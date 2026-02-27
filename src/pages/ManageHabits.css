@@ -1,0 +1,186 @@
+.manage-habits {
+  padding: var(--spacing-4);
+  animation: fadeIn 0.3s ease;
+}
+
+.manage-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-5);
+}
+
+.manage-header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.add-btn {
+  background-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  border: none;
+  border-radius: var(--radius-full);
+  padding: var(--spacing-2) var(--spacing-4);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.add-btn:hover {
+  background-color: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+}
+
+.add-habit-form {
+  background-color: var(--md-sys-color-surface);
+  border: 1px solid var(--md-sys-color-outline);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-4);
+  margin-bottom: var(--spacing-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  animation: slideDown 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+}
+
+.form-group-row {
+  display: flex;
+  gap: var(--spacing-4);
+}
+
+label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+input[type="text"] {
+  padding: var(--spacing-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--md-sys-color-outline);
+  font-size: 1rem;
+  background-color: var(--md-sys-color-background);
+  color: var(--md-sys-color-on-background);
+}
+
+input[type="text"]:focus {
+  outline: 2px solid var(--md-sys-color-primary);
+  border-color: transparent;
+}
+
+.icon-input {
+  width: 60px;
+  text-align: center;
+}
+
+.color-input {
+  width: 100%;
+  height: 48px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  background-color: transparent;
+}
+
+.submit-btn {
+  background-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  border: none;
+  border-radius: var(--radius-full);
+  padding: var(--spacing-3);
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: var(--spacing-2);
+  transition: opacity 0.2s;
+}
+
+.submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.manage-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.manage-habit-card {
+  background-color: var(--md-sys-color-surface);
+  border: 1px solid var(--md-sys-color-outline);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-3);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  transition: background-color 0.2s;
+}
+
+.manage-habit-card:hover {
+  background-color: var(--md-sys-color-surface-variant);
+}
+
+.manage-habit-info {
+  flex: 1;
+}
+
+.manage-habit-info h3 {
+  margin: 0 0 2px 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.habit-type {
+  font-size: 0.75rem;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.delete-btn {
+  background-color: transparent;
+  border: none;
+  color: var(--md-sys-color-error);
+  padding: var(--spacing-2);
+  cursor: pointer;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.delete-btn:hover {
+  background-color: var(--md-sys-color-error-container);
+}
+.type-select {
+  padding: var(--spacing-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--md-sys-color-outline);
+  font-size: 1rem;
+  background-color: var(--md-sys-color-background);
+  color: var(--md-sys-color-on-background);
+}
+.type-select:focus {
+  outline: 2px solid var(--md-sys-color-primary);
+  border-color: transparent;
+}
+

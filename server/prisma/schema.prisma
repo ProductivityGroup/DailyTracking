@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  display_name String
+  timezone     String   @default("America/New_York")
+  created_at   DateTime @default(now())
+
+  habits  Habit[]
+  entries HabitEntry[]
+}
+
+model Habit {
+  id              String   @id @default(uuid())
+  user_id         String
+  name            String
+  description     String?
+  type            HabitType
+  target_value    Float?
+  unit            String?
+  color           String
+  icon            String
+  category        String?
+  frequency_type  FrequencyType @default(DAILY)
+  frequency_days  Int[]
+  is_archived     Boolean  @default(false)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  user      User         @relation(fields: [user_id], references: [id])
+  entries   HabitEntry[]
+  reminders Reminder[]
+}
+
+model HabitEntry {
+  id         String   @id @default(uuid())
+  habit_id   String
+  user_id    String
+  date       String   // YYYY-MM-DD
+  value      Float?
+  completed  Boolean  @default(false)
+  notes      String?
+  created_at DateTime @default(now())
+
+  habit Habit @relation(fields: [habit_id], references: [id])
+  user  User  @relation(fields: [user_id], references: [id])
+
+  @@unique([habit_id, date])
+}
+
+model Reminder {
+  id            String   @id @default(uuid())
+  habit_id      String
+  time          String   // HH:MM 24h
+  days_of_week  Int[]
+  is_active     Boolean  @default(true)
+
+  habit Habit @relation(fields: [habit_id], references: [id])
+}
+
+enum HabitType {
+  BOOLEAN
+  NUMERIC
+  DURATION
+  RATING
+}
+
+enum FrequencyType {
+  DAILY
+  WEEKLY
+  CUSTOM
+}
