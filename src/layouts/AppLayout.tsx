@@ -1,31 +1,30 @@
+import { useState, useEffect } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { Home, ListTodo, BarChart3, Bell, Cloud, CloudOff, RefreshCw, CheckCircle } from 'lucide-react';
-import { useNotifications } from '../hooks/useNotifications';
-import { useSync } from '../hooks/useSync';
+import { Home, ListTodo, BarChart3, Bell } from 'lucide-react';
+import ReminderSettings from '../components/ReminderSettings';
+import { syncToServer } from '../services/syncService';
 import './AppLayout.css';
 
 export default function AppLayout() {
-  const { testNotification } = useNotifications();
-  const { syncStatus, triggerSync } = useSync();
+  const [showSettings, setShowSettings] = useState(false);
 
-  const getSyncIcon = () => {
-    switch (syncStatus) {
-      case 'syncing': return <RefreshCw size={16} className="spin" />;
-      case 'success': return <CheckCircle size={16} style={{ color: '#34a853' }} />;
-      case 'error': return <CloudOff size={16} style={{ color: 'var(--md-sys-color-error)' }} />;
-      case 'offline': return <CloudOff size={16} style={{ color: 'var(--md-sys-color-outline)' }} />;
-      default: return <Cloud size={16} />;
-    }
-  };
+  // Silently sync local IndexedDB → PostgreSQL on load and when tab becomes visible
+  // This keeps the backend up-to-date for notifications
+  useEffect(() => {
+    syncToServer();
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') syncToServer();
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
 
   return (
     <div className="layout-container">
       <header className="app-top-header">
-        <button onClick={triggerSync} className="header-btn" title={`Sync: ${syncStatus}`}>
-          {getSyncIcon()}
-        </button>
-        <button onClick={testNotification} className="header-btn" title="Test Notification">
-          <Bell size={16} />
+        <button onClick={() => setShowSettings(true)} className="header-action-btn" title="Configure Reminders">
+          <Bell size={14} />
+          <span>Remind me</span>
         </button>
       </header>
       <main className="layout-main">
@@ -33,28 +32,31 @@ export default function AppLayout() {
       </main>
 
       <nav className="bottom-nav">
+        {/* ... NavLinks ... */}
         <NavLink
           to="/"
           className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
         >
-          <Home size={24} />
+          <Home size={22} />
           <span>Today</span>
         </NavLink>
         <NavLink
           to="/analytics"
           className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
         >
-          <BarChart3 size={24} />
+          <BarChart3 size={22} />
           <span>Analytics</span>
         </NavLink>
         <NavLink
           to="/manage"
           className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
         >
-          <ListTodo size={24} />
+          <ListTodo size={22} />
           <span>Manage</span>
         </NavLink>
       </nav>
+
+      {showSettings && <ReminderSettings onClose={() => setShowSettings(false)} />}
     </div>
   );
 }

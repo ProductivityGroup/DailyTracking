@@ -1,6 +1,6 @@
 import { db } from '../db/db';
 
-const API_BASE = 'http://localhost:3001/api';
+import { API_BASE } from '../config';
 
 export type SyncStatus = 'idle' | 'syncing' | 'success' | 'error' | 'offline';
 

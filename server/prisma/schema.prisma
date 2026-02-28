@@ -14,8 +14,20 @@ model User {
   timezone     String   @default("America/New_York")
   created_at   DateTime @default(now())
 
-  habits  Habit[]
-  entries HabitEntry[]
+  habits           Habit[]
+  entries          HabitEntry[]
+  reminderSettings ReminderSettings?
+}
+
+model ReminderSettings {
+  id              String  @id @default(uuid())
+  user_id         String  @unique
+  sms_enabled     Boolean @default(false)
+  phone           String?
+  morning_time    String? // HH:MM 24h - sends all habits
+  afternoon_time  String? // HH:MM 24h - sends only uncompleted habits
+
+  user User @relation(fields: [user_id], references: [id])
 }
 
 model Habit {

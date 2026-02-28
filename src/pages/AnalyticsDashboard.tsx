@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react';
 import { useHabits, useTodayEntries } from '../hooks/useHabits';
 import { db } from '../db/db';
 import { HabitEntry } from '../types';
+import { CheckCircle2, Target, TrendingUp, CalendarDays, Activity } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line
 } from 'recharts';
-import HabitHeatmap from '../components/HabitHeatmap';
 import { exportDataAsCSV } from '../utils/exportCSV';
 import './AnalyticsDashboard.css';
 
@@ -16,11 +16,6 @@ interface DailyCompletion {
 }
 
 interface EntryData {
-  date: string;
-  value: number;
-}
-
-interface HeatmapEntry {
   date: string;
   value: number;
 }
@@ -48,7 +43,6 @@ interface HabitStats {
   completionRate30d: number;
   totalCompletions: number;
   entryData: EntryData[];
-  heatmapData: HeatmapEntry[];
 }
 
 function computeStreaks(entries: HabitEntry[]): { current: number; longest: number } {
@@ -157,6 +151,7 @@ export default function AnalyticsDashboard() {
   const [dailyCompletions, setDailyCompletions] = useState<DailyCompletion[]>([]);
   const [weeklyRates, setWeeklyRates] = useState<WeeklyData[]>([]);
   const [monthlyRates, setMonthlyRates] = useState<MonthlyData[]>([]);
+  const [masterTimeline, setMasterTimeline] = useState<any[]>([]);
 
   useEffect(() => {
     if (!habits || habits.length === 0) return;
@@ -166,6 +161,8 @@ export default function AnalyticsDashboard() {
       const today = new Date();
       const completionMap: Record<string, number> = {};
       const allEntries: HabitEntry[] = [];
+
+      let globalMinDate = new Date(today);
 
       // Initialize last 30 days in completionMap
       for (let i = 29; i >= 0; i--) {
@@ -200,17 +197,34 @@ export default function AnalyticsDashboard() {
           }
         });
 
-        // Build entry data for numeric/duration line chart
-        const entryData: EntryData[] = entries
-          .filter(e => e.value != null)
-          .sort((a, b) => a.date.localeCompare(b.date))
-          .map(e => ({ date: e.date, value: e.value! }));
+        // Generate timeline starting from the habit's creation date (or first entry)
+        const creationDate = habit.created_at ? new Date(habit.created_at) : new Date(Math.min(...entries.map(e => new Date(e.date).getTime())));
+        if (isNaN(creationDate.getTime())) creationDate.setTime(today.getTime()); // fallback
+        creationDate.setHours(0, 0, 0, 0);
 
-        // Build heatmap data (all entries for this habit)
-        const heatmapData: HeatmapEntry[] = entries.map(e => ({
-          date: e.date,
-          value: e.completed ? (e.value ?? 1) : 0
-        }));
+        if (creationDate < globalMinDate) {
+          globalMinDate = new Date(creationDate);
+        }
+
+        const entryMap: Record<string, number> = {};
+        entries.forEach(e => {
+          if (habit.type === 'boolean') {
+            entryMap[e.date] = e.completed ? 1 : 0;
+          } else {
+            entryMap[e.date] = e.value ?? 0;
+          }
+        });
+
+        const entryData: EntryData[] = [];
+        const iterDate = new Date(creationDate);
+        while (iterDate <= today) {
+          const dStr = iterDate.toISOString().split('T')[0];
+          entryData.push({
+            date: dStr,
+            value: entryMap[dStr] || 0
+          });
+          iterDate.setDate(iterDate.getDate() + 1);
+        }
 
         allStats.push({
           habitId: habit.id as string,
@@ -224,12 +238,27 @@ export default function AnalyticsDashboard() {
           completionRate7d: Math.round((last7 / 7) * 100),
           completionRate30d: Math.round((last30 / 30) * 100),
           totalCompletions: entries.filter(e => e.completed).length,
-          entryData,
-          heatmapData
+          entryData
         });
       }
 
       setStats(allStats);
+
+      // Build unified Master Timeline
+      const unifiedData: any[] = [];
+      const iterGlobal = new Date(globalMinDate);
+      while (iterGlobal <= today) {
+        const dStr = iterGlobal.toISOString().split('T')[0];
+        const dayRecord: any = { date: dStr };
+        // Populate this day's record with each habit's value (or 0)
+        for (const stat of allStats) {
+          const entryForDay = stat.entryData.find(e => e.date === dStr);
+          dayRecord[stat.habitId] = entryForDay ? entryForDay.value : 0;
+        }
+        unifiedData.push(dayRecord);
+        iterGlobal.setDate(iterGlobal.getDate() + 1);
+      }
+      setMasterTimeline(unifiedData);
 
       // Build daily completions array for bar chart
       const dailyArr = Object.entries(completionMap)
@@ -270,26 +299,78 @@ export default function AnalyticsDashboard() {
       </header>
 
       <section className="summary-cards">
-        <div className="summary-card">
-          <span className="summary-value">{completedToday}/{totalToday}</span>
-          <span className="summary-label">Today</span>
+        <div className="summary-card stat-today">
+          <div className="summary-icon"><CheckCircle2 size={24} /></div>
+          <div className="summary-data">
+            <span className="summary-value">{completedToday}/{totalToday}</span>
+            <span className="summary-label">Today's Progress</span>
+          </div>
         </div>
-        <div className="summary-card">
-          <span className="summary-value">{stats.reduce((sum, s) => sum + s.totalCompletions, 0)}</span>
-          <span className="summary-label">Total Check-ins</span>
+        <div className="summary-card stat-total">
+          <div className="summary-icon"><Target size={24} /></div>
+          <div className="summary-data">
+            <span className="summary-value">{stats.reduce((sum, s) => sum + s.totalCompletions, 0)}</span>
+            <span className="summary-label">Total Check-ins</span>
+          </div>
         </div>
-        <div className="summary-card">
-          <span className="summary-value">
-            {stats.length > 0 ? Math.round(stats.reduce((sum, s) => sum + s.completionRate30d, 0) / stats.length) : 0}%
-          </span>
-          <span className="summary-label">30-Day Consistency</span>
+        <div className="summary-card stat-consistency">
+          <div className="summary-icon"><TrendingUp size={24} /></div>
+          <div className="summary-data">
+            <span className="summary-value">
+              {stats.length > 0 ? Math.round(stats.reduce((sum, s) => sum + s.completionRate30d, 0) / stats.length) : 0}%
+            </span>
+            <span className="summary-label">30-Day Consistency</span>
+          </div>
         </div>
       </section>
 
+      {/* Master Timeline Chart */}
+      {masterTimeline.length > 0 && (
+        <section className="chart-section full-width">
+          <div className="chart-header-row">
+            <Activity size={16} className="chart-title-icon" />
+            <h2>Master Habit Timeline</h2>
+          </div>
+          <div className="chart-container">
+            <ResponsiveContainer width="100%" height={260}>
+              <LineChart data={masterTimeline}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--md-sys-color-outline, #ccc)" opacity={0.3} />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 10, fill: 'var(--md-sys-color-on-surface-variant, #666)' }}
+                  interval={Math.max(0, Math.floor(masterTimeline.length / 6))}
+                  label={{ value: 'Date', position: 'insideBottom', offset: -5, fontSize: 11, fill: 'var(--md-sys-color-on-surface-variant, #666)' }}
+                />
+                <YAxis
+                  tick={{ fontSize: 11, fill: 'var(--md-sys-color-on-surface-variant, #666)' }}
+                  label={{ value: 'Value / Check', angle: -90, position: 'insideLeft', fontSize: 11, fill: 'var(--md-sys-color-on-surface-variant, #666)' }}
+                />
+                <Tooltip contentStyle={chartTooltipStyle} />
+                {stats.map(s => (
+                  <Line
+                    key={`line-${s.habitId}`}
+                    type={s.type === 'boolean' ? 'stepAfter' : 'monotone'}
+                    dataKey={s.habitId}
+                    name={s.name}
+                    stroke={s.color}
+                    strokeWidth={2}
+                    dot={{ fill: s.color, r: 2 }}
+                    activeDot={{ r: 5 }}
+                  />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+      )}
+
       {/* 30-Day Completion Trend Bar Chart */}
       {dailyCompletions.length > 0 && (
-        <section className="chart-section">
-          <h2>30-Day Completion Trend</h2>
+        <section className="chart-section full-width">
+          <div className="chart-header-row">
+            <Activity size={16} className="chart-title-icon" />
+            <h2>30-Day Completion Trend</h2>
+          </div>
           <div className="chart-container">
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={dailyCompletions}>
@@ -298,10 +379,12 @@ export default function AnalyticsDashboard() {
                   dataKey="date"
                   tick={{ fontSize: 10, fill: 'var(--md-sys-color-on-surface-variant, #666)' }}
                   interval={4}
+                  label={{ value: 'Date (MM-DD)', position: 'insideBottom', offset: -5, fontSize: 11, fill: 'var(--md-sys-color-on-surface-variant, #666)' }}
                 />
                 <YAxis
                   allowDecimals={false}
                   tick={{ fontSize: 11, fill: 'var(--md-sys-color-on-surface-variant, #666)' }}
+                  label={{ value: 'Completions', angle: -90, position: 'insideLeft', fontSize: 11, fill: 'var(--md-sys-color-on-surface-variant, #666)' }}
                 />
                 <Tooltip contentStyle={chartTooltipStyle} />
                 <Bar dataKey="count" fill="var(--md-sys-color-primary, #6750A4)" radius={[4, 4, 0, 0]} />
@@ -311,55 +394,67 @@ export default function AnalyticsDashboard() {
         </section>
       )}
 
-      {/* Weekly Completion Rate Chart */}
-      {weeklyRates.length > 0 && (
-        <section className="chart-section">
-          <h2>Weekly Completion Rate</h2>
-          <div className="chart-container">
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={weeklyRates}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--md-sys-color-outline, #ccc)" opacity={0.3} />
-                <XAxis
-                  dataKey="week"
-                  tick={{ fontSize: 10, fill: 'var(--md-sys-color-on-surface-variant, #666)' }}
-                />
-                <YAxis
-                  domain={[0, 100]}
-                  tick={{ fontSize: 11, fill: 'var(--md-sys-color-on-surface-variant, #666)' }}
-                  tickFormatter={(v: number) => `${v}%`}
-                />
-                <Tooltip contentStyle={chartTooltipStyle} formatter={(value?: number) => [`${value ?? 0}%`, 'Rate']} />
-                <Bar dataKey="rate" fill="var(--md-sys-color-tertiary, #65587b)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </section>
-      )}
+      <div className="charts-grid-2col">
+        {/* Weekly Completion Rate Chart */}
+        {weeklyRates.length > 0 && (
+          <section className="chart-section">
+            <div className="chart-header-row">
+              <CalendarDays size={16} className="chart-title-icon" />
+              <h2>Weekly Completion</h2>
+            </div>
+            <div className="chart-container">
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={weeklyRates}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--md-sys-color-outline, #ccc)" opacity={0.3} />
+                  <XAxis
+                    dataKey="week"
+                    tick={{ fontSize: 10, fill: 'var(--md-sys-color-on-surface-variant, #666)' }}
+                    label={{ value: 'Week Of', position: 'insideBottom', offset: -5, fontSize: 11, fill: 'var(--md-sys-color-on-surface-variant, #666)' }}
+                  />
+                  <YAxis
+                    domain={[0, 100]}
+                    tick={{ fontSize: 11, fill: 'var(--md-sys-color-on-surface-variant, #666)' }}
+                    tickFormatter={(v: number) => `${v}%`}
+                    label={{ value: 'Completion %', angle: -90, position: 'insideLeft', fontSize: 11, fill: 'var(--md-sys-color-on-surface-variant, #666)' }}
+                  />
+                  <Tooltip contentStyle={chartTooltipStyle} formatter={(value?: number) => [`${value ?? 0}%`, 'Rate']} />
+                  <Bar dataKey="rate" fill="var(--color-secondary)" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </section>
+        )}
 
-      {/* Monthly Completion Rate Chart */}
-      {monthlyRates.length > 0 && (
-        <section className="chart-section">
-          <h2>Monthly Completion Rate</h2>
-          <div className="chart-container">
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={monthlyRates}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--md-sys-color-outline, #ccc)" opacity={0.3} />
-                <XAxis
-                  dataKey="month"
-                  tick={{ fontSize: 10, fill: 'var(--md-sys-color-on-surface-variant, #666)' }}
-                />
-                <YAxis
-                  domain={[0, 100]}
-                  tick={{ fontSize: 11, fill: 'var(--md-sys-color-on-surface-variant, #666)' }}
-                  tickFormatter={(v: number) => `${v}%`}
-                />
-                <Tooltip contentStyle={chartTooltipStyle} formatter={(value?: number) => [`${value ?? 0}%`, 'Rate']} />
-                <Bar dataKey="rate" fill="var(--md-sys-color-secondary, #50606f)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </section>
-      )}
+        {/* Monthly Completion Rate Chart */}
+        {monthlyRates.length > 0 && (
+          <section className="chart-section">
+            <div className="chart-header-row">
+              <CalendarDays size={16} className="chart-title-icon" />
+              <h2>Monthly Completion</h2>
+            </div>
+            <div className="chart-container">
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={monthlyRates}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--md-sys-color-outline, #ccc)" opacity={0.3} />
+                  <XAxis
+                    dataKey="month"
+                    tick={{ fontSize: 10, fill: 'var(--md-sys-color-on-surface-variant, #666)' }}
+                    label={{ value: 'Month', position: 'insideBottom', offset: -5, fontSize: 11, fill: 'var(--md-sys-color-on-surface-variant, #666)' }}
+                  />
+                  <YAxis
+                    domain={[0, 100]}
+                    tick={{ fontSize: 11, fill: 'var(--md-sys-color-on-surface-variant, #666)' }}
+                    tickFormatter={(v: number) => `${v}%`}
+                    label={{ value: 'Completion %', angle: -90, position: 'insideLeft', fontSize: 11, fill: 'var(--md-sys-color-on-surface-variant, #666)' }}
+                  />
+                  <Tooltip contentStyle={chartTooltipStyle} formatter={(value?: number) => [`${value ?? 0}%`, 'Rate']} />
+                  <Bar dataKey="rate" fill="var(--color-tertiary)" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </section>
+        )}
+      </div>
 
       <section className="habit-stats-list">
         <h2>Per-Habit Breakdown</h2>
@@ -369,10 +464,12 @@ export default function AnalyticsDashboard() {
           stats.map(s => (
             <div key={s.habitId} className="stat-card">
               <div className="stat-header">
-                <div className="stat-icon" style={{ backgroundColor: s.color + '20', color: s.color }}>
-                  {s.icon}
+                <div className="stat-header-left">
+                  <div className="stat-icon" style={{ backgroundColor: s.color + '20', color: s.color }}>
+                    {s.icon}
+                  </div>
+                  <h3>{s.name}</h3>
                 </div>
-                <h3>{s.name}</h3>
               </div>
               <div className="stat-grid">
                 <div className="stat-item">
@@ -392,38 +489,6 @@ export default function AnalyticsDashboard() {
                   <span className="stat-label">30-Day Rate</span>
                 </div>
               </div>
-
-              {/* GitHub-style heatmap */}
-              <HabitHeatmap entries={s.heatmapData} color={s.color} />
-
-              {/* Per-habit value trend line chart for numeric/duration habits */}
-              {(s.type === 'numeric' || s.type === 'duration') && s.entryData.length > 1 && (
-                <div className="chart-container habit-chart">
-                  <p className="chart-subtitle">Value Trend{s.unit ? ` (${s.unit})` : ''}</p>
-                  <ResponsiveContainer width="100%" height={160}>
-                    <LineChart data={s.entryData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--md-sys-color-outline, #ccc)" opacity={0.3} />
-                      <XAxis
-                        dataKey="date"
-                        tick={{ fontSize: 10, fill: 'var(--md-sys-color-on-surface-variant, #666)' }}
-                        interval={Math.max(0, Math.floor(s.entryData.length / 6))}
-                      />
-                      <YAxis
-                        tick={{ fontSize: 11, fill: 'var(--md-sys-color-on-surface-variant, #666)' }}
-                      />
-                      <Tooltip contentStyle={chartTooltipStyle} />
-                      <Line
-                        type="monotone"
-                        dataKey="value"
-                        stroke={s.color}
-                        strokeWidth={2}
-                        dot={{ fill: s.color, r: 3 }}
-                        activeDot={{ r: 5 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
             </div>
           ))
         )}

@@ -1,53 +1,57 @@
 .manage-habits {
-  padding: var(--spacing-4);
-  animation: fadeIn 0.3s ease;
+  padding: var(--spacing-5) var(--spacing-4);
+  animation: fadeIn 0.4s ease;
 }
 
 .manage-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--spacing-5);
+  margin-bottom: var(--spacing-6);
 }
 
 .manage-header h1 {
-  font-size: 2rem;
+  font-size: 1.75rem;
   font-weight: 700;
+  letter-spacing: -0.025em;
 }
 
 .add-btn {
-  background-color: var(--md-sys-color-primary);
-  color: var(--md-sys-color-on-primary);
+  background-color: var(--color-primary);
+  color: #ffffff;
   border: none;
   border-radius: var(--radius-full);
   padding: var(--spacing-2) var(--spacing-4);
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: 0.8125rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
 }
 
 .add-btn:hover {
-  background-color: var(--md-sys-color-primary-container);
-  color: var(--md-sys-color-on-primary-container);
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 
+/* Form — clean card */
 .add-habit-form {
-  background-color: var(--md-sys-color-surface);
-  border: 1px solid var(--md-sys-color-outline);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-4);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-5);
   margin-bottom: var(--spacing-5);
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-3);
+  gap: var(--spacing-4);
   animation: slideDown 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: var(--shadow-md);
 }
 
 @keyframes slideDown {
   from {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: translateY(-8px);
   }
 
   to {
@@ -68,119 +72,137 @@
 }
 
 label {
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 500;
-  color: var(--md-sys-color-on-surface-variant);
+  color: var(--color-text-secondary);
 }
 
-input[type="text"] {
+input[type="text"],
+input[type="number"] {
   padding: var(--spacing-3);
   border-radius: var(--radius-sm);
-  border: 1px solid var(--md-sys-color-outline);
-  font-size: 1rem;
-  background-color: var(--md-sys-color-background);
-  color: var(--md-sys-color-on-background);
+  border: 1px solid var(--color-border);
+  font-size: 0.9375rem;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-family);
+  transition: all 0.15s ease;
 }
 
-input[type="text"]:focus {
-  outline: 2px solid var(--md-sys-color-primary);
-  border-color: transparent;
+input[type="text"]:focus,
+input[type="number"]:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-soft);
 }
 
 .icon-input {
-  width: 60px;
+  width: 56px;
   text-align: center;
 }
 
 .color-input {
   width: 100%;
-  height: 48px;
+  height: 44px;
   padding: 0;
-  border: none;
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   cursor: pointer;
   background-color: transparent;
 }
 
 .submit-btn {
-  background-color: var(--md-sys-color-primary);
-  color: var(--md-sys-color-on-primary);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+  color: #ffffff;
   border: none;
   border-radius: var(--radius-full);
   padding: var(--spacing-3);
   font-weight: 600;
+  font-size: 0.9375rem;
   cursor: pointer;
-  margin-top: var(--spacing-2);
-  transition: opacity 0.2s;
+  margin-top: var(--spacing-1);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
+}
+
+.submit-btn:hover {
+  opacity: 0.9;
 }
 
 .submit-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
+/* Habit list cards */
 .manage-list {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-3);
+  gap: var(--spacing-2);
 }
 
 .manage-habit-card {
-  background-color: var(--md-sys-color-surface);
-  border: 1px solid var(--md-sys-color-outline);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-3);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-4);
   display: flex;
   align-items: center;
   gap: var(--spacing-3);
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
 }
 
 .manage-habit-card:hover {
-  background-color: var(--md-sys-color-surface-variant);
+  box-shadow: var(--shadow-md);
 }
 
 .manage-habit-info {
   flex: 1;
+  min-width: 0;
 }
 
 .manage-habit-info h3 {
-  margin: 0 0 2px 0;
-  font-size: 1rem;
+  margin: 0;
+  font-size: 0.9375rem;
   font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .habit-type {
   font-size: 0.75rem;
-  color: var(--md-sys-color-on-surface-variant);
+  color: var(--color-text-tertiary);
 }
 
 .delete-btn {
   background-color: transparent;
   border: none;
-  color: var(--md-sys-color-error);
+  color: var(--color-text-tertiary);
   padding: var(--spacing-2);
   cursor: pointer;
   border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s;
 }
 
 .delete-btn:hover {
-  background-color: var(--md-sys-color-error-container);
+  color: var(--color-error);
+  background-color: rgba(239, 68, 68, 0.08);
 }
+
 .type-select {
   padding: var(--spacing-3);
   border-radius: var(--radius-sm);
-  border: 1px solid var(--md-sys-color-outline);
-  font-size: 1rem;
-  background-color: var(--md-sys-color-background);
-  color: var(--md-sys-color-on-background);
-}
-.type-select:focus {
-  outline: 2px solid var(--md-sys-color-primary);
-  border-color: transparent;
+  border: 1px solid var(--color-border);
+  font-size: 0.9375rem;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-family);
 }
 
+.type-select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-soft);
+}

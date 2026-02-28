@@ -1,4 +1,4 @@
-export type HabitType = 'boolean' | 'numeric' | 'duration' | 'rating';
+export type HabitType = 'boolean' | 'numeric' | 'duration';
 export type FrequencyType = 'daily' | 'weekly' | 'custom';
 
 export interface Habit {

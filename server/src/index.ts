@@ -8,6 +8,8 @@ import { entryRoutes } from './routes/entries';
 import { analyticsRoutes } from './routes/analytics';
 import { syncRoutes } from './routes/sync';
 import { notificationRoutes } from './routes/notifications';
+import { settingsRoutes } from './routes/settings';
+import { startScheduler } from './scheduler';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -26,9 +28,19 @@ app.use('/api/entries', entryRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/sync', syncRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/settings', settingsRoutes);
+
+// Health check that the frontend can use or just for ping
+app.get('/api/health', (_req, res) => {
+  res.json({ status: 'ok', time: new Date() });
+});
+
+// Create tables if using something like SQLite, or trust Prisma migrations for Postgres
+// In our case we run `npx prisma migrate dev` manually, so Prisma manages the schema
 
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server listening on port ${PORT}`);
+  startScheduler();
 });
 
 export default app;

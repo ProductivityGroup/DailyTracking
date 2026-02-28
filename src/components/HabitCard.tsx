@@ -53,26 +53,6 @@ export default function HabitCard({ habit, entry, onToggleBoolean, onSetValue }:
         </div>
       );
     }
-
-    if (habit.type === 'rating') {
-      return (
-        <div className="habit-rating-container" onClick={e => e.stopPropagation()}>
-          {[1, 2, 3, 4, 5].map(star => (
-            <button
-              key={star}
-              className={`star-btn ${Number(inputValue) >= star ? 'active' : ''}`}
-              onClick={() => {
-                setInputValue(star);
-                onSetValue(habit.id as string, star, true);
-              }}
-            >
-              ★
-            </button>
-          ))}
-        </div>
-      );
-    }
-
     return null;
   };
 

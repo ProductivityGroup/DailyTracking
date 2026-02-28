@@ -1,7 +1,19 @@
 import React, { useState } from 'react';
 import { useHabits } from '../hooks/useHabits';
+import CustomSelect from '../components/CustomSelect';
 import './ManageHabits.css';
 import { Trash2 } from 'lucide-react';
+
+const PRESET_ICONS = ['🏃', '📚', '💧', '🧘', '🥦', '🏋️', '🍎', '🖊️', '🎸', '💻', '🚲', '💰', '🛌', '🧹'];
+const PRESET_COLORS = [
+  '#006493', // Primary Blue
+  '#8F2668', // Deep Purple/Pink
+  '#2E6C00', // Forest Green
+  '#984061', // Rose
+  '#006B58', // Teal
+  '#A03E00', // Rust Orange
+  '#5C53A7', // Indigo
+];
 
 export default function ManageHabits() {
   const { habits, addHabit, deleteHabit } = useHabits();
@@ -12,20 +24,20 @@ export default function ManageHabits() {
   const [type, setType] = useState<import('../types').HabitType>('boolean');
   const [targetValue, setTargetValue] = useState<number | ''>('');
   const [unit, setUnit] = useState('');
-  const [color, setColor] = useState('#006493');
-  const [icon, setIcon] = useState('🏃');
 
   const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
+    const randomIcon = PRESET_ICONS[Math.floor(Math.random() * PRESET_ICONS.length)];
+    const randomColor = PRESET_COLORS[Math.floor(Math.random() * PRESET_COLORS.length)];
 
     await addHabit({
       name,
       type,
       target_value: targetValue === '' ? undefined : Number(targetValue),
       unit: unit.trim() || undefined,
-      color,
-      icon,
+      color: randomColor,
+      icon: randomIcon,
       frequency_type: 'daily'
     });
 
@@ -59,14 +71,17 @@ export default function ManageHabits() {
           </div>
 
           <div className="form-group-row">
-            <div className="form-group">
-              <label>Habit Type</label>
-              <select className="type-select" value={type} onChange={e => setType(e.target.value as any)}>
-                <option value="boolean">Done / Not Done (Boolean)</option>
-                <option value="numeric">Number (e.g. 8 glasses)</option>
-                <option value="duration">Duration (e.g. 30 mins)</option>
-                <option value="rating">Rating (1 to 5 Stars)</option>
-              </select>
+            <div className="form-group" style={{ flex: 1 }}>
+              <CustomSelect
+                label="Value Type"
+                value={type}
+                onChange={val => setType(val as any)}
+                options={[
+                  { value: 'boolean', label: 'Done / Not Done' },
+                  { value: 'numeric', label: 'Number (e.g. 8 glasses)' },
+                  { value: 'duration', label: 'Duration (e.g. 30 mins)' },
+                ]}
+              />
             </div>
           </div>
 
@@ -94,28 +109,6 @@ export default function ManageHabits() {
               </div>
             </div>
           )}
-
-          <div className="form-group-row">
-            <div className="form-group">
-              <label>Icon</label>
-              <input
-                type="text"
-                value={icon}
-                onChange={e => setIcon(e.target.value)}
-                maxLength={2}
-                className="icon-input"
-              />
-            </div>
-            <div className="form-group" style={{ flex: 1 }}>
-              <label>Color</label>
-              <input
-                type="color"
-                value={color}
-                onChange={e => setColor(e.target.value)}
-                className="color-input"
-              />
-            </div>
-          </div>
 
           <button type="submit" className="submit-btn" disabled={!name.trim()}>
             Save Habit
