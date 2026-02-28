@@ -6,10 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "postinstall": "cd server && npm install && npx prisma generate"
   },
   "dependencies": {
-    "@clerk/clerk-react": "^5.61.3",
+    "@supabase/supabase-js": "^2.98.0",
     "dexie": "^3.2.4",
     "dexie-react-hooks": "^1.1.7",
     "lucide-react": "^0.300.0",

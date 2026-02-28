@@ -3,8 +3,6 @@ import prisma from '../db';
 
 export const notificationRoutes = Router();
 
-const DEFAULT_USER_ID = '00000000-0000-0000-0000-000000000001';
-
 // GET /api/notifications/check — returns uncompleted habits for today (smart suppression)
 notificationRoutes.get('/check', async (req: Request, res: Response) => {
   try {

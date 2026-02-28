@@ -9,9 +9,8 @@ import { analyticsRoutes } from './routes/analytics';
 import { syncRoutes } from './routes/sync';
 import { notificationRoutes } from './routes/notifications';
 import { settingsRoutes } from './routes/settings';
-import { webhookRoutes } from './routes/webhooks';
-import { startScheduler } from './scheduler';
-import { ClerkExpressRequireAuth } from '@clerk/clerk-sdk-node';
+import { executeCronJob } from './scheduler';
+import { requireAuth } from './authMiddleware';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -23,13 +22,18 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Use Clerk to protect all API routes below this point
-const requireAuth = ClerkExpressRequireAuth({});
+// Secure Cron Endpoint for Vercel
+app.get('/api/cron', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return res.status(401).json({ error: 'Unauthorized cron trigger' });
+  }
 
-// Webhooks from external services (e.g. Clerk user sync) must NOT be behind requireAuth
-app.use('/api/webhooks', webhookRoutes);
+  await executeCronJob();
+  res.status(200).json({ status: 'Cron job executed successfully' });
+});
 
-// Protected Routes
+// Protected Routes using Supabase Auth
 app.use('/api/habits', requireAuth, habitRoutes);
 app.use('/api/entries', requireAuth, entryRoutes);
 app.use('/api/analytics', requireAuth, analyticsRoutes);
@@ -45,9 +49,14 @@ app.get('/api/health', (_req, res) => {
 // Create tables if using something like SQLite, or trust Prisma migrations for Postgres
 // In our case we run `npx prisma migrate dev` manually, so Prisma manages the schema
 
-app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
-  startScheduler();
-});
+// Only call app.listen when running locally!
+// Vercel Serverless Functions will export the app and handle the binding automatically.
+if (process.env.VERCEL !== '1') {
+  app.listen(PORT, () => {
+    console.log(`Server listening on port ${PORT}`);
+    // Local dev: We don't have Vercel Cron, so we can't reliably test times locally anymore
+    // unless we curl the endpoint or set up node-cron strictly for dev mode.
+  });
+}
 
 export default app;

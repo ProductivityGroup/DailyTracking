@@ -3,8 +3,6 @@ import prisma from '../db';
 
 export const analyticsRoutes = Router();
 
-const DEFAULT_USER_ID = '00000000-0000-0000-0000-000000000001';
-
 // GET /api/analytics/summary — overall stats
 analyticsRoutes.get('/summary', async (req: Request, res: Response) => {
   try {

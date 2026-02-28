@@ -1,8 +1,16 @@
 import { db } from '../db/db';
-
+import { supabase } from '../supabaseClient';
 import { API_BASE } from '../config';
 
 export type SyncStatus = 'idle' | 'syncing' | 'success' | 'error' | 'offline';
+
+async function authenticatedFetch(endpoint: string, options: RequestInit = {}) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+  const headers = new Headers(options.headers || {});
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+  return fetch(`${API_BASE}${endpoint}`, { ...options, headers });
+}
 
 export async function syncToServer(): Promise<SyncStatus> {
   if (!navigator.onLine) return 'offline';
@@ -11,7 +19,7 @@ export async function syncToServer(): Promise<SyncStatus> {
     // Push all local habits
     const habits = await db.habits.toArray();
     if (habits.length > 0) {
-      await fetch(`${API_BASE}/sync/habits`, {
+      await authenticatedFetch('/sync/habits', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ habits })
@@ -21,7 +29,7 @@ export async function syncToServer(): Promise<SyncStatus> {
     // Push all local entries
     const entries = await db.entries.toArray();
     if (entries.length > 0) {
-      await fetch(`${API_BASE}/sync/entries`, {
+      await authenticatedFetch('/sync/entries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ entries })
@@ -37,7 +45,7 @@ export async function syncToServer(): Promise<SyncStatus> {
 
 export async function fetchAnalytics(habitId: string) {
   try {
-    const res = await fetch(`${API_BASE}/analytics/${habitId}`);
+    const res = await authenticatedFetch(`/analytics/${habitId}`);
     if (!res.ok) throw new Error('Failed to fetch analytics');
     return await res.json();
   } catch (err) {
@@ -48,7 +56,7 @@ export async function fetchAnalytics(habitId: string) {
 
 export async function fetchSummary() {
   try {
-    const res = await fetch(`${API_BASE}/analytics/summary`);
+    const res = await authenticatedFetch('/analytics/summary');
     if (!res.ok) throw new Error('Failed to fetch summary');
     return await res.json();
   } catch (err) {

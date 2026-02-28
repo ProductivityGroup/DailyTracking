@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, MessageSquare, Sun, Sunset } from 'lucide-react';
 import { API_BASE } from '../config';
+import { useApi } from '../hooks/useApi';
 import './ReminderSettings.css';
 
 interface ReminderSettingsType {
@@ -148,9 +149,10 @@ export default function ReminderSettings({ onClose }: Props) {
   const [saveMessage, setSaveMessage] = useState('');
   const [testing, setTesting] = useState(false);
   const [testMessage, setTestMessage] = useState('');
+  const { apiFetch } = useApi();
 
   useEffect(() => {
-    fetch(`${API_BASE}/settings/reminders`)
+    apiFetch('/settings/reminders')
       .then(res => res.json())
       .then(data => {
         if (!data.error) {
@@ -171,7 +173,7 @@ export default function ReminderSettings({ onClose }: Props) {
     setSaving(true);
     setSaveMessage('');
     try {
-      const res = await fetch(`${API_BASE}/settings/reminders`, {
+      const res = await apiFetch('/settings/reminders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings)
@@ -193,7 +195,7 @@ export default function ReminderSettings({ onClose }: Props) {
     setTesting(true);
     setTestMessage('');
     try {
-      const res = await fetch(`${API_BASE}/settings/reminders/test`, { method: 'POST' });
+      const res = await apiFetch('/settings/reminders/test', { method: 'POST' });
       const data = await res.json();
       if (res.ok) {
         setTestMessage('✅ Test sent! Check your ntfy app.');

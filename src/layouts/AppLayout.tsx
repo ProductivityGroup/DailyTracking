@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import { Home, ListTodo, BarChart3, Bell } from 'lucide-react';
-import { UserButton } from '@clerk/clerk-react';
 import ReminderSettings from '../components/ReminderSettings';
 import { syncToServer } from '../services/syncService';
 import './AppLayout.css';
@@ -24,7 +23,6 @@ export default function AppLayout() {
     <div className="layout-container">
       <header className="app-top-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px' }}>
         <div className="header-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <UserButton afterSignOutUrl="/" />
           <button onClick={() => setShowSettings(true)} className="header-action-btn" title="Configure Reminders">
             <Bell size={14} />
             <span style={{ marginLeft: '4px' }}>Remind me</span>

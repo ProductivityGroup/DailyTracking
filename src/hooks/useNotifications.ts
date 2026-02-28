@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
 import { useHabits, useTodayEntries } from './useHabits';
-
-import { API_BASE } from '../config';
+import { useApi } from './useApi';
 
 export function useNotifications() {
   const { habits } = useHabits();
   const { todayEntries } = useTodayEntries();
+  const { apiFetch } = useApi();
 
   useEffect(() => {
     // Request permission on mount
@@ -52,7 +52,7 @@ export function useNotifications() {
     if (Notification.permission !== 'granted') return;
 
     try {
-      const res = await fetch(`${API_BASE}/notifications/digest`);
+      const res = await apiFetch('/notifications/digest');
       if (!res.ok) return;
       const data = await res.json();
 

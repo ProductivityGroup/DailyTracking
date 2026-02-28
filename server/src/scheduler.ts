@@ -1,14 +1,12 @@
-import cron from 'node-cron';
 import prisma from './db';
 import { sendNtfyNotification } from './services/smsService';
 
-// Run every minute to check if any user's reminder time matches the current time
-export function startScheduler() {
-  console.log('Reminder scheduler started (checking every minute)...');
+// This function is triggered securely by Vercel Cron every minute
+export async function executeCronJob() {
+  console.log('Cron job triggered by Vercel...');
 
-  cron.schedule('* * * * *', async () => {
-    try {
-      const now = new Date();
+  try {
+    const now = new Date();
       const hh = now.getHours().toString().padStart(2, '0');
       const mm = now.getMinutes().toString().padStart(2, '0');
       const currentTimeStr = `${hh}:${mm}`;
@@ -61,8 +59,7 @@ export function startScheduler() {
           sendNtfyNotification(setting.phone, habitNames).catch(console.error);
         }
       }
-    } catch (error) {
-      console.error('Scheduler error:', error);
-    }
-  });
+  } catch (error) {
+    console.error('Cron job error:', error);
+  }
 }

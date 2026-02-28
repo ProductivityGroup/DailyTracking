@@ -1,6 +1,5 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../db';
-
 const settingsRoutes = Router();
 
 // GET /api/settings/reminders
