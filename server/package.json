@@ -8,12 +8,14 @@
     "build": "prisma generate && tsc"
   },
   "dependencies": {
+    "@clerk/clerk-sdk-node": "^4.13.23",
     "@prisma/client": "^5.10.0",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "node-cron": "^4.2.1",
     "nodemailer": "^8.0.1",
+    "svix": "^1.86.0",
     "twilio": "^5.12.2"
   },
   "prisma": {

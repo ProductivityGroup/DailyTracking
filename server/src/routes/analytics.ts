@@ -6,15 +6,18 @@ export const analyticsRoutes = Router();
 const DEFAULT_USER_ID = '00000000-0000-0000-0000-000000000001';
 
 // GET /api/analytics/summary — overall stats
-analyticsRoutes.get('/summary', async (_req: Request, res: Response) => {
+analyticsRoutes.get('/summary', async (req: Request, res: Response) => {
   try {
+    const userId = req.auth?.userId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
     const habits = await prisma.habit.findMany({
-      where: { user_id: DEFAULT_USER_ID, is_archived: false }
+      where: { user_id: userId, is_archived: false }
     });
 
     const today = new Date().toISOString().split('T')[0];
     const todayEntries = await prisma.habitEntry.findMany({
-      where: { user_id: DEFAULT_USER_ID, date: today, completed: true }
+      where: { user_id: userId, date: today, completed: true }
     });
 
     // Last 30 days completion rate
@@ -24,7 +27,7 @@ analyticsRoutes.get('/summary', async (_req: Request, res: Response) => {
 
     const recentEntries = await prisma.habitEntry.findMany({
       where: {
-        user_id: DEFAULT_USER_ID,
+        user_id: userId,
         date: { gte: dateStr },
         completed: true
       }
@@ -49,9 +52,12 @@ analyticsRoutes.get('/summary', async (_req: Request, res: Response) => {
 // GET /api/analytics/:habitId — per-habit stats
 analyticsRoutes.get('/:habitId', async (req: Request, res: Response) => {
   try {
+    const userId = req.auth?.userId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
     const { habitId } = req.params;
     const entries = await prisma.habitEntry.findMany({
-      where: { habit_id: habitId, user_id: DEFAULT_USER_ID, completed: true },
+      where: { habit_id: habitId, user_id: userId, completed: true },
       orderBy: { date: 'asc' }
     });
 

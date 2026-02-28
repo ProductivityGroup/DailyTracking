@@ -9,8 +9,9 @@ import { analyticsRoutes } from './routes/analytics';
 import { syncRoutes } from './routes/sync';
 import { notificationRoutes } from './routes/notifications';
 import { settingsRoutes } from './routes/settings';
+import { webhookRoutes } from './routes/webhooks';
 import { startScheduler } from './scheduler';
-
+import { ClerkExpressRequireAuth } from '@clerk/clerk-sdk-node';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -22,13 +23,19 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Routes
-app.use('/api/habits', habitRoutes);
-app.use('/api/entries', entryRoutes);
-app.use('/api/analytics', analyticsRoutes);
-app.use('/api/sync', syncRoutes);
-app.use('/api/notifications', notificationRoutes);
-app.use('/api/settings', settingsRoutes);
+// Use Clerk to protect all API routes below this point
+const requireAuth = ClerkExpressRequireAuth({});
+
+// Webhooks from external services (e.g. Clerk user sync) must NOT be behind requireAuth
+app.use('/api/webhooks', webhookRoutes);
+
+// Protected Routes
+app.use('/api/habits', requireAuth, habitRoutes);
+app.use('/api/entries', requireAuth, entryRoutes);
+app.use('/api/analytics', requireAuth, analyticsRoutes);
+app.use('/api/sync', requireAuth, syncRoutes);
+app.use('/api/notifications', requireAuth, notificationRoutes);
+app.use('/api/settings', requireAuth, settingsRoutes);
 
 // Health check that the frontend can use or just for ping
 app.get('/api/health', (_req, res) => {

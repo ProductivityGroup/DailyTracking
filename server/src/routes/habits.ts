@@ -3,14 +3,14 @@ import prisma from '../db';
 
 export const habitRoutes = Router();
 
-// Default user ID for single-user mode (V1)
-const DEFAULT_USER_ID = '00000000-0000-0000-0000-000000000001';
-
 // GET /api/habits — list all habits for the user
-habitRoutes.get('/', async (_req: Request, res: Response) => {
+habitRoutes.get('/', async (req: Request, res: Response) => {
   try {
+    const userId = req.auth?.userId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
     const habits = await prisma.habit.findMany({
-      where: { user_id: DEFAULT_USER_ID },
+      where: { user_id: userId },
       orderBy: { created_at: 'desc' }
     });
     res.json(habits);
@@ -22,10 +22,13 @@ habitRoutes.get('/', async (_req: Request, res: Response) => {
 // POST /api/habits — create a new habit
 habitRoutes.post('/', async (req: Request, res: Response) => {
   try {
+    const userId = req.auth?.userId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
     const habit = await prisma.habit.create({
       data: {
         ...req.body,
-        user_id: DEFAULT_USER_ID,
+        user_id: userId,
         type: (req.body.type as string).toUpperCase(),
         frequency_type: (req.body.frequency_type as string || 'daily').toUpperCase()
       }

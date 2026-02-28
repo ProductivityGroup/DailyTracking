@@ -6,16 +6,19 @@ export const notificationRoutes = Router();
 const DEFAULT_USER_ID = '00000000-0000-0000-0000-000000000001';
 
 // GET /api/notifications/check — returns uncompleted habits for today (smart suppression)
-notificationRoutes.get('/check', async (_req: Request, res: Response) => {
+notificationRoutes.get('/check', async (req: Request, res: Response) => {
   try {
+    const userId = req.auth?.userId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
     const today = new Date().toISOString().split('T')[0];
 
     const habits = await prisma.habit.findMany({
-      where: { user_id: DEFAULT_USER_ID, is_archived: false }
+      where: { user_id: userId, is_archived: false }
     });
 
     const completedEntries = await prisma.habitEntry.findMany({
-      where: { user_id: DEFAULT_USER_ID, date: today, completed: true }
+      where: { user_id: userId, date: today, completed: true }
     });
 
     const completedHabitIds = new Set(completedEntries.map(e => e.habit_id));
@@ -34,8 +37,11 @@ notificationRoutes.get('/check', async (_req: Request, res: Response) => {
 });
 
 // GET /api/notifications/digest — weekly stats summary for digest notifications
-notificationRoutes.get('/digest', async (_req: Request, res: Response) => {
+notificationRoutes.get('/digest', async (req: Request, res: Response) => {
   try {
+    const userId = req.auth?.userId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
     const today = new Date();
     const weekAgo = new Date(today);
     weekAgo.setDate(weekAgo.getDate() - 7);
@@ -43,12 +49,12 @@ notificationRoutes.get('/digest', async (_req: Request, res: Response) => {
     const todayStr = today.toISOString().split('T')[0];
 
     const habits = await prisma.habit.findMany({
-      where: { user_id: DEFAULT_USER_ID, is_archived: false }
+      where: { user_id: userId, is_archived: false }
     });
 
     const weekEntries = await prisma.habitEntry.findMany({
       where: {
-        user_id: DEFAULT_USER_ID,
+        user_id: userId,
         date: { gte: weekAgoStr, lte: todayStr },
         completed: true
       }

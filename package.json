@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@clerk/clerk-react": "^5.61.3",
     "dexie": "^3.2.4",
     "dexie-react-hooks": "^1.1.7",
     "lucide-react": "^0.300.0",

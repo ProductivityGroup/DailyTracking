@@ -4,18 +4,18 @@ import prisma from '../db';
 const settingsRoutes = Router();
 
 // GET /api/settings/reminders
-settingsRoutes.get('/reminders', async (_req: Request, res: Response) => {
+settingsRoutes.get('/reminders', async (req: Request, res: Response) => {
   try {
-    const user = await prisma.user.findFirst();
-    if (!user) return res.status(404).json({ error: 'User not found' });
+    const userId = req.auth?.userId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     let settings = await prisma.reminderSettings.findUnique({
-      where: { user_id: user.id }
+      where: { user_id: userId }
     });
 
     if (!settings) {
       settings = await prisma.reminderSettings.create({
-        data: { user_id: user.id }
+        data: { user_id: userId }
       });
     }
 
@@ -29,15 +29,15 @@ settingsRoutes.get('/reminders', async (_req: Request, res: Response) => {
 // POST /api/settings/reminders
 settingsRoutes.post('/reminders', async (req: Request, res: Response) => {
   try {
+    const userId = req.auth?.userId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
     const { sms_enabled, phone, morning_time, afternoon_time } = req.body;
 
-    const user = await prisma.user.findFirst();
-    if (!user) return res.status(404).json({ error: 'User not found' });
-
     const settings = await prisma.reminderSettings.upsert({
-      where: { user_id: user.id },
+      where: { user_id: userId },
       update: { sms_enabled, phone, morning_time, afternoon_time },
-      create: { user_id: user.id, sms_enabled, phone, morning_time, afternoon_time }
+      create: { user_id: userId, sms_enabled, phone, morning_time, afternoon_time }
     });
 
     res.json(settings);
@@ -48,20 +48,20 @@ settingsRoutes.post('/reminders', async (req: Request, res: Response) => {
 });
 
 // POST /api/settings/reminders/test - fire a test notification immediately
-settingsRoutes.post('/reminders/test', async (_req: Request, res: Response) => {
+settingsRoutes.post('/reminders/test', async (req: Request, res: Response) => {
   try {
-    const user = await prisma.user.findFirst();
-    if (!user) return res.status(404).json({ error: 'User not found' });
+    const userId = req.auth?.userId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-    const settings = await prisma.reminderSettings.findUnique({ where: { user_id: user.id } });
+    const settings = await prisma.reminderSettings.findUnique({ where: { user_id: userId } });
     if (!settings) return res.status(404).json({ error: 'No reminder settings found. Save settings first.' });
 
     const today = new Date();
     const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
-    const allHabits = await prisma.habit.findMany({ where: { user_id: user.id, is_archived: false } });
+    const allHabits = await prisma.habit.findMany({ where: { user_id: userId, is_archived: false } });
     const completedEntries = await prisma.habitEntry.findMany({
-      where: { user_id: user.id, date: dateStr, completed: true }
+      where: { user_id: userId, date: dateStr, completed: true }
     });
     const completedIds = new Set(completedEntries.map(e => e.habit_id));
     const uncompletedNames = allHabits.filter(h => !completedIds.has(h.id)).map(h => h.name);
