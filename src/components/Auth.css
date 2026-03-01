@@ -61,11 +61,7 @@
   text-align: left;
 }
 
-.auth-message {
-  color: var(--color-success);
-  font-size: 0.85rem;
-  text-align: left;
-}
+
 
 .auth-submit {
   background-color: var(--color-primary);
@@ -86,24 +82,4 @@
 .auth-submit:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-}
-
-.auth-toggle {
-  margin-top: 24px;
-  color: var(--color-text-secondary);
-  font-size: 0.9rem;
-}
-
-.auth-toggle-btn {
-  background: none;
-  border: none;
-  color: var(--color-primary);
-  font-weight: 600;
-  margin-left: 6px;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-.auth-toggle-btn:hover {
-  text-decoration: underline;
 }
