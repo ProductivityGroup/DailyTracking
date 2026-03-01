@@ -15,15 +15,33 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
 
   const token = authHeader.split(' ')[1];
 
-  try {
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+  // Local Development Bypass
+  const isLocalMock = (!supabaseUrl || !supabaseKey) && token === 'mock-token';
 
-    if (error || !user) {
-      return res.status(401).json({ error: 'Invalid or expired token' });
+  try {
+    let validUserId: string;
+    let userEmail: string = '';
+    let userDisplayName: string = 'User';
+
+    if (isLocalMock) {
+      // Bypass Supabase network call for local development
+      validUserId = 'local-dev-user';
+      userEmail = 'dev@local.host';
+      userDisplayName = 'Local Developer';
+    } else {
+      // Production Supabase verification
+      const { data: { user }, error } = await supabase.auth.getUser(token);
+
+      if (error || !user) {
+        return res.status(401).json({ error: 'Invalid or expired token' });
+      }
+      validUserId = user.id;
+      userEmail = user.email || '';
+      userDisplayName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
     }
 
     // Inject the validated user ID into the Express request object
-    (req as any).auth = { userId: user.id };
+    (req as any).auth = { userId: validUserId };
 
     // Auto-create user in our DB if they don't exist yet (simulating what the webhook did)
     // In a pure Supabase setup, we might use a Postgres Trigger, but doing it here guarantees
@@ -32,12 +50,12 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
       const { PrismaClient } = require('@prisma/client');
       const prisma = new PrismaClient();
       await prisma.user.upsert({
-        where: { id: user.id },
+        where: { id: validUserId },
         update: {},
         create: {
-          id: user.id,
-          email: user.email || '',
-          display_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+          id: validUserId,
+          email: userEmail,
+          display_name: userDisplayName,
         }
       });
     } catch (dbErr) {
