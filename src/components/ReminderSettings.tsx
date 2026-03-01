@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, MessageSquare, Sun, Sunset } from 'lucide-react';
-import { API_BASE } from '../config';
 import { useApi } from '../hooks/useApi';
 import './ReminderSettings.css';
 
