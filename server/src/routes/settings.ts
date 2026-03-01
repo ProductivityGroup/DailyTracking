@@ -31,12 +31,12 @@ settingsRoutes.post('/reminders', async (req: Request, res: Response) => {
     const userId = req.auth?.userId;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-    const { sms_enabled, phone, morning_time, afternoon_time } = req.body;
+    const { sms_enabled, phone } = req.body;
 
     const settings = await prisma.reminderSettings.upsert({
       where: { user_id: userId },
-      update: { sms_enabled, phone, morning_time, afternoon_time },
-      create: { user_id: userId, sms_enabled, phone, morning_time, afternoon_time }
+      update: { sms_enabled, phone },
+      create: { user_id: userId, sms_enabled, phone }
     });
 
     res.json(settings);
