@@ -10,14 +10,18 @@ Supabase gives us a free Postgres database and a complete Auth system natively t
 1. Go to [Supabase.com](https://supabase.com/) and create an account.
 2. Click **New Project** and name it `DailyTracking`. Save the database password securely.
 3. Wait a few minutes for the project to provision.
-4. Go to **Project Settings** (the gear icon on the very bottom left) **> API**. Copy two values:
+4. Go to **Authentication > Add User**.
+   - Create a strictly manual user with the exact email: `shared@dailytracking.app`
+   - Set the password to whatever simple "Group Password" you want to share with everyone.
+   - **Important**: Choose *Auto Confirm User* so you don't have to deal with email verification.
+5. Go to **Project Settings** (the gear icon on the very bottom left) **> API**. Copy two values:
    - **Project URL**: Found at the top of the page under the "Project URL" section (`https://....supabase.co`)
    - **Publishable API key**: Found under the "Project API keys" section (`eyJ...`)
-5. Click the **Connect** button at the very top center of the dashboard and select the **ORMs / Prisma** tab.
+6. Click the **Connect** button at the very top center of the dashboard and select the **ORMs / Prisma** tab.
    - **`DATABASE_URL`**: Copy the connection string. By default, "Use connection pooling" is enabled. It uses port `6543` and ends with `?pgbouncer=true...`.
    - **`DIRECT_URL`**: Uncheck the "Use connection pooling" toggle. The port will change to `5432`. Copy this as your Direct URL.
    - *Make sure to replace `[YOUR-PASSWORD]` in both strings with your actual database password!*
-6. Go to **Authentication > Providers** and ensure "Email" is enabled.
+7. Go to **Authentication > Providers** and ensure "Email" is enabled.
 
 ---
 
