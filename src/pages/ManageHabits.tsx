@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useHabits } from '../hooks/useHabits';
 import CustomSelect from '../components/CustomSelect';
 import './ManageHabits.css';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Pencil } from 'lucide-react';
 
 const PRESET_ICONS = ['🏃', '📚', '💧', '🧘', '🥦', '🏋️', '🍎', '🖊️', '🎸', '💻', '🚲', '💰', '🛌', '🧹'];
 const PRESET_COLORS = [
@@ -16,8 +16,9 @@ const PRESET_COLORS = [
 ];
 
 export default function ManageHabits() {
-  const { habits, addHabit, deleteHabit } = useHabits();
+  const { habits, addHabit, deleteHabit, updateHabit } = useHabits();
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingHabitId, setEditingHabitId] = useState<string | null>(null);
 
   // Basic form state
   const [name, setName] = useState('');
@@ -36,42 +37,77 @@ export default function ManageHabits() {
     );
   };
 
-  const handleAddSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) return;
-    const randomIcon = PRESET_ICONS[Math.floor(Math.random() * PRESET_ICONS.length)];
-    const randomColor = PRESET_COLORS[Math.floor(Math.random() * PRESET_COLORS.length)];
-
-    await addHabit({
-      name,
-      type,
-      target_value: targetValue === '' ? undefined : Number(targetValue),
-      unit: unit.trim() || undefined,
-      color: randomColor,
-      icon: randomIcon,
-      frequency_type: frequencyType,
-      frequency_days: frequencyType === 'custom' ? frequencyDays : undefined
-    });
-
+  const resetForm = () => {
     setName('');
     setType('boolean');
     setTargetValue('');
     setUnit('');
     setFrequencyType('daily');
+    setFrequencyDays([1, 2, 3, 4, 5]);
+    setEditingHabitId(null);
     setShowAddForm(false);
+  };
+
+  const handleEditClick = (habit: import('../types').Habit) => {
+    setName(habit.name);
+    setType(habit.type);
+    setTargetValue(habit.target_value ?? '');
+    setUnit(habit.unit || '');
+    setFrequencyType(habit.frequency_type);
+    setFrequencyDays(habit.frequency_days || [1, 2, 3, 4, 5]);
+    setEditingHabitId(habit.id as string);
+    setShowAddForm(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+
+    if (editingHabitId) {
+      await updateHabit(editingHabitId, {
+        name,
+        type,
+        target_value: targetValue === '' ? undefined : Number(targetValue),
+        unit: unit.trim() || undefined,
+        frequency_type: frequencyType,
+        frequency_days: frequencyType === 'custom' ? frequencyDays : undefined
+      });
+    } else {
+      const randomIcon = PRESET_ICONS[Math.floor(Math.random() * PRESET_ICONS.length)];
+      const randomColor = PRESET_COLORS[Math.floor(Math.random() * PRESET_COLORS.length)];
+
+      await addHabit({
+        name,
+        type,
+        target_value: targetValue === '' ? undefined : Number(targetValue),
+        unit: unit.trim() || undefined,
+        color: randomColor,
+        icon: randomIcon,
+        frequency_type: frequencyType,
+        frequency_days: frequencyType === 'custom' ? frequencyDays : undefined
+      });
+    }
+
+    resetForm();
   };
 
   return (
     <div className="manage-habits">
       <header className="manage-header">
         <h1>Manage Habits</h1>
-        <button className="add-btn" onClick={() => setShowAddForm(!showAddForm)}>
+        <button className="add-btn" onClick={() => {
+          if (showAddForm) {
+            resetForm();
+          } else {
+            setShowAddForm(true);
+          }
+        }}>
           {showAddForm ? 'Cancel' : '+ New Habit'}
         </button>
       </header>
 
       {showAddForm && (
-        <form className="add-habit-form" onSubmit={handleAddSubmit}>
+        <form className="add-habit-form" onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Habit Name</label>
             <input
@@ -154,7 +190,7 @@ export default function ManageHabits() {
           )}
 
           <button type="submit" className="submit-btn" disabled={!name.trim()}>
-            Save Habit
+            {editingHabitId ? 'Save Changes' : 'Save Habit'}
           </button>
         </form>
       )}
@@ -172,13 +208,22 @@ export default function ManageHabits() {
                 {habit.target_value && ` (${habit.target_value} ${habit.unit || ''})`}
               </span>
             </div>
-            <button
-              className="delete-btn"
-              onClick={() => deleteHabit(habit.id as string)}
-              title="Delete Habit"
-            >
-              <Trash2 size={20} />
-            </button>
+            <div className="manage-habit-actions">
+              <button
+                className="edit-btn"
+                onClick={() => handleEditClick(habit)}
+                title="Edit Habit"
+              >
+                <Pencil size={20} />
+              </button>
+              <button
+                className="delete-btn"
+                onClick={() => deleteHabit(habit.id as string)}
+                title="Delete Habit"
+              >
+                <Trash2 size={20} />
+              </button>
+            </div>
           </div>
         ))}
         {habits?.length === 0 && !showAddForm && (

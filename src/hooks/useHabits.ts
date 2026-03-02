@@ -31,7 +31,15 @@ export function useHabits() {
     await db.entries.where('habit_id').equals(id).delete();
   };
 
-  return { habits, addHabit, deleteHabit };
+  const updateHabit = async (id: string, updates: Partial<Omit<Habit, 'id' | 'created_at'>>) => {
+    const changes = {
+      ...updates,
+      updated_at: new Date().toISOString()
+    };
+    await db.habits.update(id, changes);
+  };
+
+  return { habits, addHabit, deleteHabit, updateHabit };
 }
 
 export function useDateEntries(dateParam?: string) {
