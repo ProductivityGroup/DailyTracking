@@ -24,6 +24,17 @@ export default function ManageHabits() {
   const [type, setType] = useState<import('../types').HabitType>('boolean');
   const [targetValue, setTargetValue] = useState<number | ''>('');
   const [unit, setUnit] = useState('');
+  const [frequencyType, setFrequencyType] = useState<import('../types').FrequencyType>('daily');
+  const [frequencyDays, setFrequencyDays] = useState<number[]>([1, 2, 3, 4, 5]); // Mon-Fri default when switched
+
+  const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const toggleDay = (dayIndex: number) => {
+    setFrequencyDays(prev =>
+      prev.includes(dayIndex)
+        ? prev.filter(d => d !== dayIndex)
+        : [...prev, dayIndex].sort()
+    );
+  };
 
   const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,13 +49,15 @@ export default function ManageHabits() {
       unit: unit.trim() || undefined,
       color: randomColor,
       icon: randomIcon,
-      frequency_type: 'daily'
+      frequency_type: frequencyType,
+      frequency_days: frequencyType === 'custom' ? frequencyDays : undefined
     });
 
     setName('');
     setType('boolean');
     setTargetValue('');
     setUnit('');
+    setFrequencyType('daily');
     setShowAddForm(false);
   };
 
@@ -110,6 +123,36 @@ export default function ManageHabits() {
             </div>
           )}
 
+          <div className="form-group">
+            <CustomSelect
+              label="Frequency Schedule"
+              value={frequencyType}
+              onChange={val => setFrequencyType(val as any)}
+              options={[
+                { value: 'daily', label: 'Every Day ' },
+                { value: 'custom', label: 'Specific Days of Week' },
+              ]}
+            />
+          </div>
+
+          {frequencyType === 'custom' && (
+            <div className="form-group">
+              <label>Select Days</label>
+              <div className="days-picker">
+                {DAYS.map((day, i) => (
+                  <button
+                    key={day}
+                    type="button"
+                    className={`day-btn ${frequencyDays.includes(i) ? 'active' : ''}`}
+                    onClick={() => toggleDay(i)}
+                  >
+                    {day}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <button type="submit" className="submit-btn" disabled={!name.trim()}>
             Save Habit
           </button>
@@ -125,7 +168,7 @@ export default function ManageHabits() {
             <div className="manage-habit-info">
               <h3>{habit.name}</h3>
               <span className="habit-type">
-                Daily • {habit.type.charAt(0).toUpperCase() + habit.type.slice(1)}
+                {habit.frequency_type === 'custom' && habit.frequency_days ? habit.frequency_days.map(d => DAYS[d]).join(', ') : 'Daily'} • {habit.type.charAt(0).toUpperCase() + habit.type.slice(1)}
                 {habit.target_value && ` (${habit.target_value} ${habit.unit || ''})`}
               </span>
             </div>

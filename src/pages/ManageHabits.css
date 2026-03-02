@@ -206,3 +206,37 @@ input[type="number"]:focus {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px var(--color-primary-soft);
 }
+
+/* Custom Schedule Days Picker */
+.days-picker {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.day-btn {
+  flex: 1;
+  min-width: 36px;
+  padding: 8px 4px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.day-btn:hover {
+  background-color: var(--color-bg);
+  border-color: var(--color-border-hover);
+}
+
+.day-btn.active {
+  background-color: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+  box-shadow: 0 2px 4px rgba(103, 80, 164, 0.3);
+}

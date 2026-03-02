@@ -10,8 +10,17 @@ export default function HomeDashboard() {
   const { habits } = useHabits();
   const { dateEntries, toggleDateEntry, setDateEntryValue, removeDateEntry } = useDateEntries(currentDate);
 
-  const total = habits?.length || 0;
-  const completed = habits?.filter(h =>
+  const currentDayOfWeek = new Date(currentDate + 'T12:00:00').getDay();
+
+  const activeHabits = habits?.filter(habit => {
+    if (habit.frequency_type === 'custom' && habit.frequency_days) {
+      return habit.frequency_days.includes(currentDayOfWeek);
+    }
+    return true; // Default to daily showing up every day
+  }) || [];
+
+  const total = activeHabits.length || 0;
+  const completed = activeHabits.filter(h =>
     dateEntries?.some((e: any) => e.habit_id === h.id && e.completed)
   ).length || 0;
 
@@ -89,13 +98,13 @@ export default function HomeDashboard() {
       </section>
 
       <section className="habits-list">
-        {!habits || habits.length === 0 ? (
+        {activeHabits.length === 0 ? (
           <div className="empty-state">
-            <p>No habits to track yet.</p>
+            <p>No habits to track for this day.</p>
             <p>Head over to Manage to add some!</p>
           </div>
         ) : (
-          habits.map(habit => {
+          activeHabits.map(habit => {
             const entry = dateEntries?.find((e: any) => e.habit_id === habit.id);
             return (
               <HabitCard

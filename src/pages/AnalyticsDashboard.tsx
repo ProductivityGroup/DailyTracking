@@ -46,48 +46,96 @@ interface HabitStats {
   entryData: EntryData[];
 }
 
-function computeStreaks(entries: HabitEntry[]): { current: number; longest: number } {
+function getScheduledDaysCount(habit: import('../types').Habit, daysBack: number): number {
+  const today = new Date();
+  today.setHours(12, 0, 0, 0);
+  let count = 0;
+  for (let i = 0; i < daysBack; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const dayOfWeek = d.getDay();
+    const isScheduled = habit.frequency_type === 'custom' && habit.frequency_days
+      ? habit.frequency_days.includes(dayOfWeek)
+      : true;
+    if (isScheduled) count++;
+  }
+  return count;
+}
+
+function computeDynamicStreaks(entries: HabitEntry[], habit: import('../types').Habit): { current: number; longest: number } {
   if (entries.length === 0) return { current: 0, longest: 0 };
 
-  const completedDates = entries
-    .filter(e => e.completed)
-    .map(e => e.date)
-    .sort();
+  const completedDates = new Set(entries.filter(e => e.completed).map(e => e.date));
+  if (completedDates.size === 0) return { current: 0, longest: 0 };
 
-  if (completedDates.length === 0) return { current: 0, longest: 0 };
+  const firstCompletedStr = Array.from(completedDates).sort()[0];
+  const iterDate = new Date(firstCompletedStr + 'T12:00:00');
+  const today = new Date();
+  today.setHours(12, 0, 0, 0);
 
-  let longest = 1;
-  let temp = 1;
+  let longestStreak = 0;
+  let tempStreak = 0;
 
-  for (let i = 1; i < completedDates.length; i++) {
-    const prev = new Date(completedDates[i - 1]);
-    const curr = new Date(completedDates[i]);
-    const diff = Math.round((curr.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24));
-    if (diff === 1) {
-      temp++;
-    } else {
-      temp = 1;
+  // Forward pass for longest streak
+  while (iterDate <= today) {
+    const dStr = iterDate.toISOString().split('T')[0];
+    const isScheduled = habit.frequency_type === 'custom' && habit.frequency_days
+      ? habit.frequency_days.includes(iterDate.getDay())
+      : true;
+
+    if (isScheduled) {
+      if (completedDates.has(dStr)) {
+        tempStreak++;
+        longestStreak = Math.max(longestStreak, tempStreak);
+      } else {
+        tempStreak = 0;
+      }
     }
-    longest = Math.max(longest, temp);
+    iterDate.setDate(iterDate.getDate() + 1);
   }
 
-  // Check if current streak extends to today
-  const today = new Date();
-  const lastDate = new Date(completedDates[completedDates.length - 1]);
-  const diffToToday = Math.round((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
-  const current = diffToToday <= 1 ? temp : 0;
+  // Backward pass for current streak
+  let currentActiveStreak = 0;
+  const backIter = new Date(today);
+  const todayStr = backIter.toISOString().split('T')[0];
+  const todaySched = habit.frequency_type === 'custom' && habit.frequency_days
+      ? habit.frequency_days.includes(backIter.getDay())
+      : true;
 
-  return { current, longest };
+  let skipFirstUncompleted = todaySched && !completedDates.has(todayStr);
+
+  while (backIter >= new Date(firstCompletedStr + 'T12:00:00')) {
+    const dStr = backIter.toISOString().split('T')[0];
+    const isSched = habit.frequency_type === 'custom' && habit.frequency_days
+      ? habit.frequency_days.includes(backIter.getDay())
+      : true;
+
+    if (isSched) {
+      if (completedDates.has(dStr)) {
+        currentActiveStreak++;
+        skipFirstUncompleted = false; // found success block, don't skip anymore
+      } else {
+        if (skipFirstUncompleted) {
+           skipFirstUncompleted = false;
+        } else {
+           break; // streak officially broken
+        }
+      }
+    }
+    backIter.setDate(backIter.getDate() - 1);
+  }
+
+  return { current: currentActiveStreak, longest: longestStreak };
 }
 
 // Compute weekly completion rates for last N weeks
 function computeWeeklyRates(
   allEntries: HabitEntry[],
-  habitCount: number,
+  habits: import('../types').Habit[],
   weeks: number = 12
 ): WeeklyData[] {
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  today.setHours(12, 0, 0, 0);
   const result: WeeklyData[] = [];
 
   for (let w = weeks - 1; w >= 0; w--) {
@@ -99,13 +147,24 @@ function computeWeeklyRates(
     const startStr = weekStart.toISOString().split('T')[0];
     const endStr = weekEnd.toISOString().split('T')[0];
 
+    // Compute exactly how many habits were scheduled across this specific week
+    let possible = 0;
+    for (let d = new Date(weekStart); d <= weekEnd; d.setDate(d.getDate() + 1)) {
+      const dayOfWeek = d.getDay();
+      for (const h of habits) {
+        if (h.frequency_type === 'custom' && h.frequency_days) {
+          if (h.frequency_days.includes(dayOfWeek)) possible++;
+        } else {
+          possible++;
+        }
+      }
+    }
+
     const completed = allEntries.filter(
       e => e.completed && e.date >= startStr && e.date <= endStr
     ).length;
 
-    const possible = habitCount * 7;
     const rate = possible > 0 ? Math.round((completed / possible) * 100) : 0;
-
     const label = `${weekStart.getMonth() + 1}/${weekStart.getDate()}`;
     result.push({ week: label, rate });
   }
@@ -116,10 +175,11 @@ function computeWeeklyRates(
 // Compute monthly completion rates for last N months
 function computeMonthlyRates(
   allEntries: HabitEntry[],
-  habitCount: number,
+  habits: import('../types').Habit[],
   months: number = 12
 ): MonthlyData[] {
   const today = new Date();
+  today.setHours(12, 0, 0, 0);
   const result: MonthlyData[] = [];
 
   for (let m = months - 1; m >= 0; m--) {
@@ -131,13 +191,26 @@ function computeMonthlyRates(
     const startStr = `${year}-${String(month + 1).padStart(2, '0')}-01`;
     const endStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
 
+    let possible = 0;
+    const mStart = new Date(year, month, 1, 12, 0, 0);
+    const mEnd = new Date(year, month, daysInMonth, 12, 0, 0);
+
+    for (let d = new Date(mStart); d <= mEnd; d.setDate(d.getDate() + 1)) {
+      const dayOfWeek = d.getDay();
+      for (const h of habits) {
+        if (h.frequency_type === 'custom' && h.frequency_days) {
+          if (h.frequency_days.includes(dayOfWeek)) possible++;
+        } else {
+          possible++;
+        }
+      }
+    }
+
     const completed = allEntries.filter(
       e => e.completed && e.date >= startStr && e.date <= endStr
     ).length;
 
-    const possible = habitCount * daysInMonth;
     const rate = possible > 0 ? Math.round((completed / possible) * 100) : 0;
-
     const label = monthDate.toLocaleString('default', { month: 'short' });
     result.push({ month: label, rate });
   }
@@ -180,15 +253,18 @@ export default function AnalyticsDashboard() {
           .toArray();
 
         allEntries.push(...entries);
-        const streaks = computeStreaks(entries);
+        const streaks = computeDynamicStreaks(entries, habit);
+
+        const possible7 = getScheduledDaysCount(habit, 7);
+        const possible30 = getScheduledDaysCount(habit, 30);
 
         const last7 = entries.filter(e => {
-          const d = new Date(e.date);
+          const d = new Date(e.date + 'T12:00:00');
           return Math.round((today.getTime() - d.getTime()) / (1000 * 60 * 60 * 24)) <= 7 && e.completed;
         }).length;
 
         const last30 = entries.filter(e => {
-          const d = new Date(e.date);
+          const d = new Date(e.date + 'T12:00:00');
           return Math.round((today.getTime() - d.getTime()) / (1000 * 60 * 60 * 24)) <= 30 && e.completed;
         }).length;
 
@@ -237,8 +313,8 @@ export default function AnalyticsDashboard() {
           unit: habit.unit,
           currentStreak: streaks.current,
           longestStreak: streaks.longest,
-          completionRate7d: Math.round((last7 / 7) * 100),
-          completionRate30d: Math.round((last30 / 30) * 100),
+          completionRate7d: possible7 > 0 ? Math.round((last7 / possible7) * 100) : 0,
+          completionRate30d: possible30 > 0 ? Math.round((last30 / possible30) * 100) : 0,
           totalCompletions: entries.filter(e => e.completed).length,
           entryData
         });
@@ -269,8 +345,8 @@ export default function AnalyticsDashboard() {
       setDailyCompletions(dailyArr);
 
       // Compute weekly and monthly rates
-      setWeeklyRates(computeWeeklyRates(allEntries, habits.length));
-      setMonthlyRates(computeMonthlyRates(allEntries, habits.length));
+      setWeeklyRates(computeWeeklyRates(allEntries, habits));
+      setMonthlyRates(computeMonthlyRates(allEntries, habits));
     };
 
     loadStats();
