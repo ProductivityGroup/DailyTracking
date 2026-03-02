@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Minus, RotateCcw } from 'lucide-react';
 import { Habit, HabitEntry } from '../types';
 
 interface HabitCardProps {
@@ -6,13 +7,21 @@ interface HabitCardProps {
   entry?: HabitEntry;
   onToggleBoolean: (id: string, currentlyCompleted: boolean) => void;
   onSetValue: (id: string, value: number, isCompleted: boolean) => void;
+  onUnlog?: (id: string) => void;
 }
 
-export default function HabitCard({ habit, entry, onToggleBoolean, onSetValue }: HabitCardProps) {
+export default function HabitCard({ habit, entry, onToggleBoolean, onSetValue, onUnlog }: HabitCardProps) {
   const isCompleted = entry?.completed || false;
   const currentValue = entry?.value || '';
 
   const [inputValue, setInputValue] = useState<number | string>(currentValue);
+
+  // Keep input in sync if entry changes externally
+  useEffect(() => {
+    if (isCompleted) {
+      setInputValue(currentValue);
+    }
+  }, [isCompleted, currentValue]);
 
   const handleBooleanClick = () => {
     if (habit.type === 'boolean') {
@@ -29,6 +38,28 @@ export default function HabitCard({ habit, entry, onToggleBoolean, onSetValue }:
     }
   };
 
+  const handleUnlog = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onUnlog) {
+      onUnlog(habit.id as string);
+    }
+    setInputValue('');
+  };
+
+  const handleIncrement = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const current = Number(inputValue) || 0;
+    setInputValue(current + 1);
+  };
+
+  const handleDecrement = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const current = Number(inputValue) || 0;
+    if (current > 0) {
+      setInputValue(current - 1);
+    }
+  };
+
   const renderInputArea = () => {
     if (habit.type === 'boolean') {
       return (
@@ -39,15 +70,33 @@ export default function HabitCard({ habit, entry, onToggleBoolean, onSetValue }:
     }
 
     if (habit.type === 'numeric' || habit.type === 'duration') {
+      if (isCompleted) {
+        return (
+          <div className="habit-input-container completed-state" onClick={e => e.stopPropagation()}>
+            <div className="logged-value-display">
+              <span className="logged-number">{currentValue}</span>
+              <span className="logged-unit">{habit.unit}</span>
+            </div>
+            <button className="unlog-btn" onClick={handleUnlog} title="Undo Log">
+              <RotateCcw size={16} />
+            </button>
+          </div>
+        );
+      }
+
       return (
-        <div className="habit-input-container" onClick={e => e.stopPropagation()}>
-          <input
-            type="number"
-            className="habit-inline-input"
-            value={inputValue}
-            onChange={e => setInputValue(e.target.value)}
-            placeholder={habit.target_value ? `${habit.target_value}` : '0'}
-          />
+        <div className="habit-input-container numeric-input-mode" onClick={e => e.stopPropagation()}>
+          <div className="numeric-stepper">
+            <button className="stepper-btn" onClick={handleDecrement}><Minus size={14} /></button>
+            <input
+              type="number"
+              className="habit-inline-input"
+              value={inputValue}
+              onChange={e => setInputValue(e.target.value)}
+              placeholder={habit.target_value ? `${habit.target_value}` : '0'}
+            />
+            <button className="stepper-btn" onClick={handleIncrement}><Plus size={14} /></button>
+          </div>
           <span className="habit-unit">{habit.unit}</span>
           <button className="log-btn" onClick={handleLogValue}>Log</button>
         </div>
@@ -68,7 +117,9 @@ export default function HabitCard({ habit, entry, onToggleBoolean, onSetValue }:
       <div className="habit-info">
         <h3>{habit.name}</h3>
         {habit.type !== 'boolean' && habit.target_value && (
-          <span className="habit-target">Target: {habit.target_value} {habit.unit}</span>
+          <span className="habit-target-badge">
+            <span className="target-label">Target</span> {habit.target_value} {habit.unit}
+          </span>
         )}
       </div>
       <div className="habit-controls">

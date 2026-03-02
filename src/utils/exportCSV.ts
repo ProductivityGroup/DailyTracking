@@ -1,8 +1,9 @@
 import { db } from '../db/db';
 
-export async function exportDataAsCSV(): Promise<void> {
-  const habits = await db.habits.toArray();
-  const entries = await db.entries.toArray();
+export async function exportDataAsCSV(profileId: string): Promise<void> {
+  const habits = await db.habits.filter(h => h.profile_id === profileId).toArray();
+  const habitIds = habits.map(h => h.id as string);
+  const entries = await db.entries.filter(e => habitIds.includes(e.habit_id)).toArray();
 
   // Build habit name lookup
   const habitNames = new Map<string, string>();

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import { Home, ListTodo, BarChart3, Bell } from 'lucide-react';
 import ReminderSettings from '../components/ReminderSettings';
+import ProfileSwitcher from '../components/ProfileSwitcher';
 import { syncToServer } from '../services/syncService';
 import './AppLayout.css';
 
@@ -22,6 +23,7 @@ export default function AppLayout() {
   return (
     <div className="layout-container">
       <header className="app-top-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px' }}>
+        <ProfileSwitcher />
         <div className="header-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <button onClick={() => setShowSettings(true)} className="header-action-btn" title="Configure Reminders">
             <Bell size={14} />

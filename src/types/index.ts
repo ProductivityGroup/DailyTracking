@@ -1,8 +1,17 @@
 export type HabitType = 'boolean' | 'numeric' | 'duration';
 export type FrequencyType = 'daily' | 'weekly' | 'custom';
 
+export interface Profile {
+  id: string; // uuidv4
+  name: string;
+  color?: string;
+  avatar_url?: string;
+  created_at: string;
+}
+
 export interface Habit {
   id?: string; // Optional for Dexie auto-increment/UUID generation if needed, though we will use uuid v4
+  profile_id?: string; // Links habit to a specific local profile
   name: string;
   description?: string;
   type: HabitType;

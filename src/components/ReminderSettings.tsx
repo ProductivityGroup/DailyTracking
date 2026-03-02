@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, MessageSquare } from 'lucide-react';
+import { X, Save, MessageSquare, ChevronUp, ChevronDown, Bell } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
 import './ReminderSettings.css';
 
@@ -22,9 +22,36 @@ export default function ReminderSettings({ onClose }: Props) {
   const [saveMessage, setSaveMessage] = useState('');
   const [testing, setTesting] = useState(false);
   const [testMessage, setTestMessage] = useState('');
+  const [localTime, setLocalTime] = useState('20:00');
   const { apiFetch } = useApi();
 
-  useEffect(() => {
+  // Custom time picker logic
+  const [hours24Str, minutesStr] = localTime.split(':');
+  const hours24 = parseInt(hours24Str, 10) || 0;
+  const minutes = parseInt(minutesStr, 10) || 0;
+  const isPM = hours24 >= 12;
+  const displayHours = hours24 % 12 || 12;
+
+  const handleTimeChange = (newH24: number, newMin: number) => {
+    const h = Math.max(0, Math.min(23, newH24));
+    const m = Math.max(0, Math.min(59, newMin));
+    setLocalTime(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+  };
+
+  const incrementHour = () => handleTimeChange((hours24 + 1) % 24, minutes);
+  const decrementHour = () => handleTimeChange((hours24 + 23) % 24, minutes);
+  const incrementMinute = () => handleTimeChange(hours24, (minutes + 5) % 60);
+  const decrementMinute = () => handleTimeChange(hours24, (minutes + 55) % 60);
+
+  const toggleAMPM = (wantPM: boolean) => {
+    if (wantPM && !isPM) handleTimeChange((hours24 + 12) % 24, minutes);
+    if (!wantPM && isPM) handleTimeChange((hours24 + 12) % 24, minutes);
+  };
+
+    useEffect(() => {
+    const savedLocalTime = localStorage.getItem('localReminderTime');
+    if (savedLocalTime) setLocalTime(savedLocalTime);
+
     apiFetch('/settings/reminders')
       .then(res => res.json())
       .then(data => {
@@ -43,6 +70,8 @@ export default function ReminderSettings({ onClose }: Props) {
     e.preventDefault();
     setSaving(true);
     setSaveMessage('');
+    localStorage.setItem('localReminderTime', localTime);
+
     try {
       const res = await apiFetch('/settings/reminders', {
         method: 'POST',
@@ -96,12 +125,41 @@ export default function ReminderSettings({ onClose }: Props) {
 
         <form onSubmit={handleSave} className="reminder-form">
 
-          <div className="section-label">Delivery Schedule</div>
-          <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '16px', lineHeight: '1.4' }}>
-            Daily check-ins are sent every evening (20:00 UTC) containing a list of your uncompleted habits for the day.
-          </p>
+          <div className="section-label">Browser Notifications</div>
+          <div className="time-card">
+            <div className="time-card-label">
+              <div className={`time-icon ${isPM ? 'icon-afternoon' : 'icon-morning'}`}>
+                <Bell size={18} />
+              </div>
+              <div>
+                <h3 className="time-card-title">Daily Reminder Time</h3>
+                <p className="time-card-sub">When should your localized browser prompt you?</p>
+              </div>
+            </div>
 
-          <div className="section-label">Push Notifications</div>
+            <div className="time-picker-row">
+              <div className="time-segment">
+                <button type="button" className="time-stepper" onClick={incrementHour}><ChevronUp size={16} /></button>
+                <div className="time-display">{String(displayHours).padStart(2, '0')}</div>
+                <button type="button" className="time-stepper" onClick={decrementHour}><ChevronDown size={16} /></button>
+              </div>
+              <div className="time-colon">:</div>
+              <div className="time-segment">
+                <button type="button" className="time-stepper" onClick={incrementMinute}><ChevronUp size={16} /></button>
+                <div className="time-display">{String(minutes).padStart(2, '0')}</div>
+                <button type="button" className="time-stepper" onClick={decrementMinute}><ChevronDown size={16} /></button>
+              </div>
+              <div className="ampm-toggle">
+                <button type="button" className={`ampm-btn ${!isPM ? 'active' : ''}`} onClick={() => toggleAMPM(false)}>AM</button>
+                <button type="button" className={`ampm-btn ${isPM ? 'active' : ''}`} onClick={() => toggleAMPM(true)}>PM</button>
+              </div>
+            </div>
+          </div>
+
+          <div className="section-label" style={{ marginTop: '24px' }}>External Push Notifications</div>
+          <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '16px', lineHeight: '1.4' }}>
+            A backup digest is sent every evening (20:00 UTC) containing a list of your uncompleted habits.
+          </p>
 
           {/* ntfy Push */}
           <div className={`setting-card ${settings.sms_enabled ? 'active' : ''}`}>

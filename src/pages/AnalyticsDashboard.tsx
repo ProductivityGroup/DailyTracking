@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useHabits, useTodayEntries } from '../hooks/useHabits';
+import { useHabits, useDateEntries } from '../hooks/useHabits';
+import { useProfiles } from '../ProfileContext';
 import { db } from '../db/db';
 import { HabitEntry } from '../types';
 import { CheckCircle2, Target, TrendingUp, CalendarDays, Activity } from 'lucide-react';
@@ -146,7 +147,8 @@ function computeMonthlyRates(
 
 export default function AnalyticsDashboard() {
   const { habits } = useHabits();
-  const { todayEntries } = useTodayEntries();
+  const { activeProfile } = useProfiles();
+  const { dateEntries: todayEntries } = useDateEntries();
   const [stats, setStats] = useState<HabitStats[]>([]);
   const [dailyCompletions, setDailyCompletions] = useState<DailyCompletion[]>([]);
   const [weeklyRates, setWeeklyRates] = useState<WeeklyData[]>([]);
@@ -293,7 +295,7 @@ export default function AnalyticsDashboard() {
           <h1>Analytics</h1>
           <p className="date-subtitle">Your progress at a glance</p>
         </div>
-        <button className="export-btn" onClick={exportDataAsCSV} title="Export all data as CSV">
+        <button className="export-btn" onClick={() => exportDataAsCSV(activeProfile?.id || 'default')} title="Export all data as CSV">
           📥 Export CSV
         </button>
       </header>

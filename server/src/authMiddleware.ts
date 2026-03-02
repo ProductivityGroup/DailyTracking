@@ -4,7 +4,10 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
 const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || '';
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Conditionally initialize supabase so it does not crash when starting locally without env vars
+const supabase = supabaseUrl && supabaseKey
+  ? createClient(supabaseUrl, supabaseKey)
+  : null;
 
 export const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
@@ -30,6 +33,10 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
       userDisplayName = 'Local Developer';
     } else {
       // Production Supabase verification
+      if (!supabase) {
+        return res.status(500).json({ error: 'Supabase client is not configured on the server. Cannot verify token.' });
+      }
+
       const { data: { user }, error } = await supabase.auth.getUser(token);
 
       if (error || !user) {

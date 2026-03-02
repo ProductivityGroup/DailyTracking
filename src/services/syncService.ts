@@ -5,6 +5,12 @@ import { API_BASE } from '../config';
 export type SyncStatus = 'idle' | 'syncing' | 'success' | 'error' | 'offline';
 
 async function authenticatedFetch(endpoint: string, options: RequestInit = {}) {
+  // Bypassing network fetch in local mode to avoid backend & Supabase DB dependencies entirely
+  if (API_BASE.includes('localhost')) {
+    console.log(`[Local Mock] Bypassing fetch to ${endpoint}`);
+    return new Response(JSON.stringify({ mock: true, status: 'ok' }), { status: 200 });
+  }
+
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;
   const headers = new Headers(options.headers || {});

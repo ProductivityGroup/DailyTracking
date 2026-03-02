@@ -5,6 +5,7 @@ import ManageHabits from './pages/ManageHabits';
 import AnalyticsDashboard from './pages/AnalyticsDashboard';
 import Auth from './components/Auth';
 import { AuthProvider, useAuth } from './AuthContext';
+import { ProfileProvider } from './ProfileContext';
 
 function ProtectedRoutes() {
   const { session, isLoading } = useAuth();
@@ -32,9 +33,11 @@ function ProtectedRoutes() {
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <ProtectedRoutes />
-      </BrowserRouter>
+      <ProfileProvider>
+        <BrowserRouter>
+          <ProtectedRoutes />
+        </BrowserRouter>
+      </ProfileProvider>
     </AuthProvider>
   );
 }

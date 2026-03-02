@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
-import { useHabits, useTodayEntries } from './useHabits';
+import { useHabits, useDateEntries } from './useHabits';
 import { useApi } from './useApi';
 
 export function useNotifications() {
   const { habits } = useHabits();
-  const { todayEntries } = useTodayEntries();
+  const { dateEntries: todayEntries } = useDateEntries();
   const { apiFetch } = useApi();
 
   useEffect(() => {
@@ -17,8 +17,13 @@ export function useNotifications() {
     const interval = setInterval(() => {
       const now = new Date();
 
-      // Daily reminder at 8:00 PM
-      if (now.getHours() === 20 && now.getMinutes() === 0) {
+      // Configurable daily reminder
+      const savedTime = localStorage.getItem('localReminderTime') || '20:00';
+      const [hourStr, minuteStr] = savedTime.split(':');
+      const reminderHour = parseInt(hourStr, 10);
+      const reminderMinute = parseInt(minuteStr, 10);
+
+      if (now.getHours() === reminderHour && now.getMinutes() === reminderMinute) {
         checkAndNotify();
       }
 
