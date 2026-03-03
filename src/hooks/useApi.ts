@@ -7,12 +7,6 @@ import { API_BASE } from '../config';
  */
 export function useApi() {
   const authenticatedFetch = async (endpoint: string, options: RequestInit = {}) => {
-    // If running completely locally, we don't even need to hit the backend because
-    // we use an offline-first Dexie local database. This avoids needing Supabase Postgres locally!
-    if (API_BASE.includes('localhost')) {
-      console.log(`[Local Mock] Bypassing fetch to ${endpoint}`);
-      return new Response(JSON.stringify({ mock: true, status: 'ok' }), { status: 200 });
-    }
 
     const { data: { session } } = await supabase.auth.getSession();
     const token = session?.access_token;

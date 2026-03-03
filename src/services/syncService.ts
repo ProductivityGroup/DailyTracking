@@ -5,11 +5,6 @@ import { API_BASE } from '../config';
 export type SyncStatus = 'idle' | 'syncing' | 'success' | 'error' | 'offline';
 
 async function authenticatedFetch(endpoint: string, options: RequestInit = {}) {
-  // Bypassing network fetch in local mode to avoid backend & Supabase DB dependencies entirely
-  if (API_BASE.includes('localhost')) {
-    console.log(`[Local Mock] Bypassing fetch to ${endpoint}`);
-    return new Response(JSON.stringify({ mock: true, status: 'ok' }), { status: 200 });
-  }
 
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;
@@ -22,7 +17,17 @@ export async function syncToServer(): Promise<SyncStatus> {
   if (!navigator.onLine) return 'offline';
 
   try {
-    // Push all local habits
+    // PUSH profiles
+    const profiles = await db.profiles.toArray();
+    if (profiles.length > 0) {
+      await authenticatedFetch('/sync/profiles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profiles })
+      });
+    }
+
+    // PUSH habits
     const habits = await db.habits.toArray();
     if (habits.length > 0) {
       await authenticatedFetch('/sync/habits', {
@@ -32,7 +37,7 @@ export async function syncToServer(): Promise<SyncStatus> {
       });
     }
 
-    // Push all local entries
+    // PUSH entries
     const entries = await db.entries.toArray();
     if (entries.length > 0) {
       await authenticatedFetch('/sync/entries', {
@@ -40,6 +45,29 @@ export async function syncToServer(): Promise<SyncStatus> {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ entries })
       });
+    }
+
+    // PULL ALL DATA
+    const res = await authenticatedFetch('/sync');
+    if (res.ok) {
+      const { profiles: serverProfiles, habits: serverHabits, entries: serverEntries } = await res.json();
+
+      // Merge into local Dexie
+      if (serverProfiles?.length > 0) await db.profiles.bulkPut(serverProfiles);
+
+      // Map properties back if they differ in casing/naming, but Prisma uses the identical schema
+      if (serverHabits?.length > 0) {
+        const habitsToSave = serverHabits.map((h: any) => ({
+          ...h,
+          type: h.type.toLowerCase(),
+          frequency_type: h.frequency_type.toLowerCase()
+        }));
+        await db.habits.bulkPut(habitsToSave);
+      }
+
+      if (serverEntries?.length > 0) {
+        await db.entries.bulkPut(serverEntries);
+      }
     }
 
     return 'success';
